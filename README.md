@@ -2,7 +2,7 @@
 <img src="https://miro.medium.com/max/640/1*2GGXlDs3WKlw_tFGbE3LoQ.webp" align="right"
      width="300" height="250">
 ## Description
-Query existing S3 bucket data with AWS Athena, Glue through AWS console with the CloudFormation Deployment
+AWS Athena, Glue Database, Glue Crawler deployment through CloudFormation stack on already existing S3 buckets on AWS console.
 
 ## Overview
 This document provides detail on a CloudFormation template of Athena with Glue crawler that can be deployed on your existing S3 bucket. The template defines some parameters for the existing S3 bucket, an IAM Role for Glue, Athena Workgroup, Glue Database, and a Glue Crawler which scans your S3 bucket and populates the Glue Database tables with the recordings metadata and a simple query that is saved and can be run with selecting workgroup defined in the template.
