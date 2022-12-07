@@ -1,0 +1,171 @@
+# Sample CF YAML to demonstrate creating S3 buckets with Glue Database.
+AWSTemplateFormatVersion: '2010-09-09'
+ 
+# The Parameters section contains the name of the resource for your environments.
+Parameters:
+  DataS3BucketARN:
+    Type: String
+    Default: arn:aws:s3:::data-athena-016436653652
+  DataS3BucketPath:
+    Type: String
+    Default: s3://data-athena-016436653652/data/
+  OutputS3BucketPath:
+    Type: String
+    Default: s3://data-athena-016436653652/athena-output/
+#  TablePrefixName:
+#    Type: String
+#    Default: table-arn:aws:s3:::data-athena-016436653652
+ 
+# The Resources section defines metadata for the Resources.
+# Create IAM Role assumed by the crawler. For demonstration, this role is given all related permissions.
+Resources:
+  AWSAthenaGlueRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - glue.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: AWSAthenaAccess
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action: athena:*
+              Resource: '*'
+      - PolicyName: AWSGlueS3Access
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action:
+                - glue:*
+                - iam:ListRolePolicies
+                - iam:GetRole
+                - iam:GetRolePolicy
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - s3:GetBucketLocation
+                - s3:ListBucket
+                - s3:ListAllMyBuckets
+                - s3:GetBucketAcl
+                - s3:GetObject
+              Resource: !Sub
+                - ${DataS3BucketARN}*
+                - { DataS3BucketARN: !Ref DataS3BucketARN }
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource:
+                - 'arn:aws:s3:::crawler-public*'
+                - 'arn:aws:s3:::aws-glue-*'
+      - PolicyName: AWSCloudWatchAccess
+        PolicyDocument:
+          Statement:      
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:GetLogEvents
+                - logs:PutLogEvents
+              Resource: 'arn:aws:logs:*:*:/aws-glue/*'
+ 
+# Create a database to contain tables created by the crawler.
+  AWSGlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      DatabaseInput:
+        Name: !Sub database-${AWS::AccountId}-${AWS::Region}
+        Description: !Sub database-${AWS::AccountId}-${AWS::Region}
+      CatalogId: !Ref AWS::AccountId
+ 
+# Create athena workgroup for query.
+  AWSAthenaWorkGroup:
+    DependsOn:
+      - AWSGlueCrawler
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Name: !Sub workgroup-AWSGlueCrawler
+      Description: 'AWS Athena WorkGroup'
+      State: ENABLED
+#      RecursiveDeleteOption: true
+      WorkGroupConfiguration:
+        EnforceWorkGroupConfiguration: false
+        PublishCloudWatchMetricsEnabled: true
+#        RequesterPaysEnabled: false
+        ResultConfiguration:
+          OutputLocation: !Ref OutputS3BucketPath
+          EncryptionConfiguration:
+            EncryptionOption: 'SSE_S3'
+       
+ 
+# Create a crawler to crawl the data on a Raw Data S3 bucket.
+  AWSGlueCrawler:
+    DependsOn:
+      - AWSAthenaGlueRole
+      - AWSGlueDatabase
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: !Sub Crawler-${AWS::AccountId}-${AWS::Region}
+      Role:
+        Fn::GetAtt: [ AWSAthenaGlueRole, Arn ]
+      Description: AWS Glue crawler to crawl data
+      Schedule:
+        # Run crawler every day every 6 hours Monday to Friday cron(0 0/6 ? * MON-FRI *)
+        ScheduleExpression: 'cron(0 0/6 ? * MON-FRI *)'
+      DatabaseName: !Ref AWSGlueDatabase
+      Targets:
+        S3Targets:
+          - Path: !Ref DataS3BucketPath
+            Exclusions:
+              - "**.wav"
+              - "**.webm"
+              - "**.zip"
+              - "**.opus"
+              - "**.txt"
+      TablePrefix: 'sample-table'
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "LOG"
+      Configuration: "{\"Version\":1.0,\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"},\"Tables\":{\"AddOrUpdateBehavior\":\"MergeNewColumns\"}}}"
+ 
+# Create a sample query in Athena.
+  SampleQueryDate:
+    DependsOn:
+      - AWSAthenaWorkGroup
+      - AWSGlueCrawler
+      - AWSGlueDatabase
+    Type: AWS::Athena::NamedQuery
+    Properties:
+      Name: 'Sample-Query'
+      Description: 'Query that lists ProductPrices file paths, starting from the most recent StartDate.'
+      Database: !Ref AWSGlueDatabase
+      QueryString: >
+                    SELECT * FROM "database-016436653652-us-east-1"."sample-tabledata"
+                    ORDER BY name DESC
+      WorkGroup: !Ref AWSAthenaWorkGroup
+ 
+# Show output results after completion of Cloud Formation Stack.
+Outputs:
+  AWSAthenaGlueRole:
+    Value: !Ref AWSAthenaGlueRole
+    Export:
+      Name: !Sub "AWSAthenaGlueRole-Name"
+  AWSGlueDatabase:
+    Value: !Ref AWSGlueDatabase
+    Export:
+      Name: !Sub "AWSGlueDatabase-name"
+  AWSGlueCrawler:
+    Value: !Ref AWSGlueCrawler
+    Export:
+      Name: !Sub "AWSGlueCrawler-name"
+  SampleQueryDate:
+    Value: !Ref SampleQueryDate
+    Export:
+      Name: !Sub "SampleQueryDate-name"
+      
