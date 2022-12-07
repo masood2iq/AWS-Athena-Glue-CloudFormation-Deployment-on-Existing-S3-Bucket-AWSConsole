@@ -187,11 +187,12 @@ By using parameters, we are defining the existing S3 bucket, it’s path and out
 ## Step - 2
 Login to your AWS account and go to the CloudFormation console and select the nearest working region in which you want to deploy your infrastructure stack.
 
-You can also deploy your stack through AWS CLI
+You can also deploy your stack through AWS CLI command
 
 `aws cloudformation create-stack --stack-name Athena-infrastructure --template-body file://./file-name.yml`
 
-![From AWS Console](./images/image7.png)
+And from AWS console
+![](./images/image7.png)
 ![](./images/image14.png)
 
 Click on the "Create stack" button, select "Template is ready".
