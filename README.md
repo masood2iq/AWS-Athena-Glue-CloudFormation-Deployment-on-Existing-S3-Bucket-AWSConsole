@@ -188,24 +188,25 @@ By using parameters, we are defining the existing S3 bucket, it’s path and out
 Login to your AWS account and go to the CloudFormation console and select the nearest working region in which you want to deploy your infrastructure stack.
 
 You can also deploy your stack through AWS CLI
+
 `aws cloudformation create-stack --stack-name Athena-infrastructure --template-body file://./file-name.yml`
 
-![](./images/image7.png)
+![From AWS Console](./images/image7.png)
+![](./images/image14.png)
 
-Click on the "Create stack" button
-Select "Template is ready"
-In the "Specify template" panel, select "Upload a template file", "Choose file" button to select your file, and click "Next"
+Click on the "Create stack" button, select "Template is ready".
+In the "Specify template" panel, select the "Upload a template file", and "Choose file" buttons to select your file, and click the "Next" button
+![](./images/image22.png)
 
-
-Provide the “Stack name” and as you can see Parameters are already defined which we provided through YAML file, click “Next”
-
+Provide the “Stack name” and as you can see Parameters are already defined which we provided through YAML file, click the “Next” button
+![](./images/image23.png)
 
 Rest of all leave as default and click “Next”
-
-
+![](./images/image14.png)
 
 Review the things, acknowledge and click the “Submit” button.
-
+![](./images/image24.png)
+![](./images/image4.png)
 
 After successfully deploying, you can check the resources created by the stack.
 
