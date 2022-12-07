@@ -1,6 +1,6 @@
 # AWS_Athena_with_Glue_CloudFormation_Deployment_on_existing_S3_Bucket_Data_Through_AWSConsole
 <img src="https://miro.medium.com/max/640/1*2GGXlDs3WKlw_tFGbE3LoQ.webp" align="right"
-     width="300" height="200">
+     width="300" height="250">
 ## Description
 Query existing S3 bucket data with AWS Athena, Glue through AWS console with the CloudFormation Deployment
 
